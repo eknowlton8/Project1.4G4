@@ -6,5 +6,5 @@ This is a simple Trivia Bot for Discord that fetches trivia questions from the O
 
 1. Clone the repository.
    ```bash
-   git clone https://github.com/eknowlton8/TriviaBot.git
-   cd TriviaBot
+   git clone https://github.com/eknowlton8/Project1.4G4.git
+   cd Project1.4G4
