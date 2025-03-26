@@ -1,13 +1,5 @@
-import discord
 import requests
 import json
-from discord.ext import commands, tasks
-from datetime import datetime
-
-# Set up the bot
-intents = discord.Intents.default()
-intents.message_content = True
-bot = commands.Bot(command_prefix='!', intents=intents)
 
 # File to store scores
 score_file = 'scores.json'
@@ -33,61 +25,64 @@ def save_scores(scores):
     with open(score_file, 'w') as f:
         json.dump(scores, f, indent=4)
 
-# Send a trivia question and start tracking
-@bot.event
-async def on_ready():
-    print(f'Logged in as {bot.user}')
-    post_trivia.start()  # Start posting trivia at regular intervals
-
-# Post trivia question every 24 hours (change as needed)
-@tasks.loop(hours=24)
-async def post_trivia():
-    channel = bot.get_channel(YOUR_CHANNEL_ID)  # Replace with your channel ID
-    question = fetch_trivia()
-    question_text = question['question']
-    choices = question['incorrect_answers'] + [question['correct_answer']]
-    correct_answer = question['correct_answer']
-    trivia_data = {
-        'question': question_text,
-        'choices': choices,
-        'correct_answer': correct_answer
-    }
-    await channel.send(f"Trivia Question: {question_text}")
-    await channel.send(f"Choices: {', '.join(choices)}")
-    await channel.send("Respond with the correct answer to earn points!")
-    bot.trivia_data = trivia_data
-
-# Command to submit answers
-@bot.command()
-async def answer(ctx, *, user_answer):
-    correct_answer = bot.trivia_data['correct_answer']
-    scores = load_scores()
-
-    if user_answer.lower() == correct_answer.lower():
-        await ctx.send(f"Correct, {ctx.author.name}! Well done!")
-        if ctx.author.name not in scores:
-            scores[ctx.author.name] = 0
-        scores[ctx.author.name] += 1
-    else:
-        await ctx.send(f"Incorrect, {ctx.author.name}. The correct answer was: {correct_answer}")
-
-    save_scores(scores)
-
-# Command to show the leaderboard
-@bot.command()
-async def leaderboard(ctx):
+# Function to display the leaderboard
+def show_leaderboard():
     scores = load_scores()
     sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-    leaderboard_message = "Leaderboard:\n"
+    print("Leaderboard:")
     for user, score in sorted_scores:
-        leaderboard_message += f"{user}: {score} points\n"
-    await ctx.send(leaderboard_message)
+        print(f"{user}: {score} points")
 
-# Command to give a hint
-@bot.command()
-async def hint(ctx):
-    question = bot.trivia_data['question']
-    await ctx.send(f"Here's a hint for you: {question[:int(len(question)/2)]}...")
+# Function to give a hint
+def give_hint(question_text):
+    hint = question_text[:int(len(question_text)/2)] + "..."
+    print(f"Here's a hint: {hint}")
 
-# Run the bot
-bot.run('YOUR_BOT_TOKEN')  # Replace with your bot's token
+# Main function to play the trivia game
+def trivia_game():
+    scores = load_scores()
+
+    print("Welcome to the Trivia Game!\n")
+
+    while True:
+        # Fetch trivia question
+        question = fetch_trivia()
+        question_text = question['question']
+        choices = question['incorrect_answers'] + [question['correct_answer']]
+        correct_answer = question['correct_answer']
+
+        # Display the question and choices
+        print(f"Trivia Question: {question_text}")
+        print("Choices:")
+        for i, choice in enumerate(choices, 1):
+            print(f"{i}. {choice}")
+
+        # Get user input for the answer
+        user_answer = input("Your answer (type the choice number or the answer): ").strip()
+
+        if user_answer.lower() == correct_answer.lower() or user_answer.isdigit() and choices[int(user_answer) - 1].lower() == correct_answer.lower():
+            username = input("Enter your username: ").strip()
+            print(f"Correct, {username}! Well done!")
+            if username not in scores:
+                scores[username] = 0
+            scores[username] += 1
+        else:
+            print(f"Incorrect! The correct answer was: {correct_answer}")
+
+        # Save scores
+        save_scores(scores)
+
+        # Ask if the user wants to continue or see the leaderboard
+        action = input("\nWould you like to play again (yes/no), see the leaderboard (leaderboard), or quit (quit)? ").strip().lower()
+
+        if action == 'no' or action == 'quit':
+            break
+        elif action == 'leaderboard':
+            show_leaderboard()
+        elif action == 'yes':
+            continue
+        elif action == 'hint':
+            give_hint(question_text)
+
+if __name__ == "__main__":
+    trivia_game()
