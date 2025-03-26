@@ -6,7 +6,7 @@ score_file = 'scores.json'
 
 # Fetch trivia questions from Open Trivia Database API
 def fetch_trivia():
-    url = "https://opentdb.com/api.php?amount=1&type=multiple"
+    url = "https://opentdb.com/api.php?amount=10&category=21&difficulty=easy&type=multiple"
     response = requests.get(url)
     question_data = response.json()
     question = question_data['results'][0]
